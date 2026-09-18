@@ -1,0 +1,8 @@
+ipython==9.0.2
+joblib==1.4.2
+matplotlib==3.9.0
+numpy==1.26.4
+pandas==2.2.2
+Pillow==10.3.0
+scikit-learn==1.5.0
+seaborn==0.13.2

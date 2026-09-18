@@ -1,0 +1,125 @@
+%==============================================================================
+%  An Integrated, Explainable, and Auditable Pipeline for Personal Financial
+%  Risk Assessment and Cryptocurrency Portfolio Recommendation
+%
+%  LaTeX source (single-column IEEEtran).  This is a faithful format conversion
+%  of the Word manuscript "DeFi_AI_Assistant_IEEE_Paper_v2.docx"; no scientific
+%  content, numbers, equations, tables, figures, or references were altered.
+%
+%  To compile (Overleaf: set compiler to pdfLaTeX):
+%     pdflatex main
+%     bibtex   main
+%     pdflatex main
+%     pdflatex main
+%==============================================================================
+\documentclass[conference,onecolumn,letterpaper]{IEEEtran}
+
+% ---- Encoding & fonts -------------------------------------------------------
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+
+% ---- Mathematics ------------------------------------------------------------
+\usepackage{amsmath}
+\usepackage{amssymb}
+
+% ---- Graphics ---------------------------------------------------------------
+\usepackage{graphicx}
+\graphicspath{{figures/}}
+
+% ---- Tables -----------------------------------------------------------------
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{tabularx}
+% tabularx column variants (wrapping paragraph columns of stretchable width)
+\newcolumntype{L}{>{\raggedright\arraybackslash}X}
+\newcolumntype{C}{>{\centering\arraybackslash}X}
+\newcolumntype{R}{>{\raggedleft\arraybackslash}X}
+
+% ---- Citations (IEEE numeric, range compression) ----------------------------
+\usepackage{cite}
+
+% ---- Cross-references / clickable links (load last) -------------------------
+\usepackage[hidelinks]{hyperref}
+
+% ---- Capability-matrix markers (Table I) ------------------------------------
+\newcommand{\yes}{\checkmark}          % implemented and evaluated
+\newcommand{\partialmark}{$\circ$}     % discussed or partially addressed
+\newcommand{\nomark}{\textemdash}      % not addressed
+
+\begin{document}
+
+\title{An Integrated, Explainable, and Auditable Pipeline for Personal
+Financial Risk Assessment and Cryptocurrency Portfolio Recommendation}
+
+% ---- Author / affiliation block ---------------------------------------------
+% NOTE: the personal-identity fields below are placeholders carried over
+% verbatim from the source manuscript. Replace the four bracketed items
+% before submission.  <-- REQUIRES USER INPUT
+\author{%
+\IEEEauthorblockN{[Author Name(s) --- REQUIRES USER INPUT]}
+\IEEEauthorblockA{%
+\textit{Department of Information Sciences}\\
+\textit{University of Education, Lahore --- Vehari Campus, Punjab, Pakistan}\\
+Roll No(s). [REQUIRES USER INPUT] $\cdot$ Session [REQUIRES USER INPUT]\\
+Supervisor: [REQUIRES USER INPUT]}%
+}
+
+\maketitle
+\pagestyle{plain}          % centered page numbers, as in the source document
+
+% ---- Abstract ---------------------------------------------------------------
+\begin{abstract}
+Retail financial-technology tools typically treat risk assessment, explanation,
+investment allocation, and record-keeping as separate problems, so a user seldom
+receives a single recommendation that is at once data-driven, interpretable,
+conservative, and independently verifiable. This paper presents a decision-support
+pipeline that unifies these concerns end to end. Five raw, user-supplied inputs are
+transformed into three interpretable financial ratios; unsupervised K-means
+clustering assigns Low, Medium, and High risk proxy labels; a leakage-aware
+multilayer perceptron learns to reproduce those labels from the raw inputs alone
+under an explicit feature contract; a deterministic guardrail and a most-cautious
+reconciliation rule combine the learned, cluster, and rule-based signals so that the
+system can only ever escalate risk; an occlusion-based explainer reports per-input
+influence; the reconciled band is mapped to a Bitcoin/Ethereum/USDC allocation and
+projected over twelve months; and every recommendation is hashed with SHA-256 into a
+verifiable audit record. On a synthetic dataset of 3,000 records the classifier
+attains 91.0\% accuracy and a 0.881 macro-F1, with stable clusters (adjusted Rand
+index 0.868). The evaluation is held to a deliberately honest standard, and three
+findings shape its conclusions: the deterministic guardrail---not the learned
+model---binds the final decision for most users, escalating 60.6\% to High risk on
+cash-flow grounds; the multilayer perceptron is statistically indistinguishable from
+logistic regression (McNemar $p = 0.100$); and two of the three clustering features
+are arithmetically recoverable from the classifier inputs. The work is therefore best
+read as a contribution in systems integration and transparency rather than in
+algorithms: a coherent, inspectable pipeline whose safety and auditability hold by
+construction, and whose limitations are measured and disclosed rather than hidden.
+\end{abstract}
+
+% ---- Index terms ------------------------------------------------------------
+\begin{IEEEkeywords}
+Explainable artificial intelligence, financial risk assessment, K-means clustering,
+multilayer perceptron, label leakage, portfolio allocation, decentralized finance,
+blockchain audit trail, decision-support systems.
+\end{IEEEkeywords}
+
+% -----------------------------------------------------------------------------
+% Lock the reference numbering to the manuscript's [1]-[22] order.
+% IEEEtran.bst lists references in order of first citation; declaring them here,
+% in order, guarantees ref1->[1], ref2->[2], ... , ref22->[22] regardless of the
+% order in which they are first cited in the body.
+% -----------------------------------------------------------------------------
+\nocite{ref1,ref2,ref3,ref4,ref5,ref6,ref7,ref8,ref9,ref10,ref11,ref12,ref13,ref14,ref15,ref16,ref17,ref18,ref19,ref20,ref21,ref22}
+
+% ---- Body -------------------------------------------------------------------
+\input{sections/01_introduction}
+\input{sections/02_related_work}
+\input{sections/03_methodology}
+\input{sections/04_results}
+\input{sections/05_discussion}
+\input{sections/06_conclusion}
+
+% ---- References -------------------------------------------------------------
+\bibliographystyle{IEEEtran}
+\bibliography{references}
+
+\end{document}

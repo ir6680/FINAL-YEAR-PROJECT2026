@@ -1,0 +1,112 @@
+% =====================  SECTION II  =====================
+\section{Related Work and Research Gap}\label{sec:related}
+
+\subsection{Review Methodology}\label{subsec:review-method}
+The literature was surveyed with a focus on works that connect machine learning to
+actionable, user-facing financial decisions. Studies were grouped into five
+themes---AI-driven wealth management, machine learning for forecasting and distress
+prediction, unsupervised risk profiling, explainable AI for financial models, and
+decentralized-finance risk together with blockchain auditing---chosen because each maps
+onto a stage of the proposed pipeline. Each theme is reviewed for what it contributes
+and, more importantly for this work, for the boundary at which it stops. The section
+closes with a capability matrix (Table~\ref{tab:capability}) that makes the integration
+gap explicit and positions the present contribution against it.
+
+\subsection{AI-Driven Wealth Management and Robo-Advisors}\label{subsec:wealth}
+One strand of research examined how artificial intelligence could automate advisory
+functions for retail investors, from robo-advisory allocation to predictive analytics
+for wealth management \cite{ref1,ref2,ref8}. These systems demonstrated that
+personalized, data-driven guidance was feasible at scale and increasingly expected by
+users. Multi-agent and collaborative designs pushed this further, coordinating
+specialized models for financial research \cite{ref9}. What this line of work
+consistently left implicit, however, was the interpretable risk rationale behind an
+allocation and any durable record of the advice given; the emphasis was on optimizing
+the recommendation, not on making it transparent or verifiable.
+
+\subsection{Machine Learning for Forecasting and Distress Prediction}\label{subsec:forecasting}
+Supervised learning was applied to financial forecasting and to predicting financial
+distress or bankruptcy, including with multilayer perceptrons \cite{ref3,ref18,ref19};
+related work modeled the financial wellbeing of consumers to flag at-risk individuals
+\cite{ref7}. These works established that classifiers could identify financial risk
+with useful accuracy. At the same time, methodological reviews cautioned that reported
+performance in financial machine learning was frequently undermined by leakage and by
+causal over-interpretation, and that pitfalls of this kind were common rather than
+exceptional \cite{ref4}. This tension---strong headline accuracies alongside a warning
+that such accuracies are easily inflated---directly motivates the leakage-aware design
+and candid evaluation adopted here.
+
+\subsection{Unsupervised Segmentation and Risk Profiling}\label{subsec:segmentation}
+Where labeled risk outcomes were unavailable, unsupervised methods were used to segment
+users into behavioral groups; K-means clustering, in particular, was used to profile
+investor behavior into interpretable segments \cite{ref20}. This supported the use of
+clustering to derive proxy risk bands when ground-truth outcomes were absent. The proxy
+nature of such labels is a well-known caveat: a cluster is a descriptive artifact, not a
+validated risk outcome, and any downstream classifier trained on it inherits that
+limitation---a point this work makes central rather than incidental.
+
+\subsection{Explainable AI for Financial Models}\label{subsec:xai}
+As neural models entered financial practice, attribution methods that explained a
+prediction in terms of its inputs became a research focus. Benchmarks of
+feature-importance methods for neural networks showed that no single method dominated
+and that combining methods was often advisable \cite{ref10}, and sensitivity-analysis
+techniques were developed specifically for neural networks \cite{ref21}. Explainability
+was also applied directly to crypto-asset allocation \cite{ref12}. These methods were
+typically studied as standalone techniques; comparatively little work embedded a
+per-decision explanation inside a running recommendation pipeline so that every issued
+decision carried its own attribution.
+
+\subsection{DeFi Risk, Stablecoins, and Blockchain Audit Trails}\label{subsec:defi}
+The remaining literature addressed the decentralized-finance setting and the
+verifiability of records. Empirical studies documented liquidation dynamics and
+instabilities in DeFi \cite{ref5} and questioned the stability of stablecoins
+\cite{ref6}, establishing that crypto allocation carried structural risks beyond price
+volatility. Separately, a substantial literature developed blockchain-based,
+tamper-evident audit trails and reviewed blockchain applications in financial services
+\cite{ref13,ref16,ref22}, including the oracle-trust problem of connecting external data
+to on-chain records \cite{ref14,ref15}. Behavioral work added that disclosing a
+system's limitations improved user trust and reliance \cite{ref11,ref17}. Each of these
+strands secured or motivated one property in isolation; none integrated verifiable
+auditing with an explainable, risk-constrained recommendation for an individual user.
+
+\subsection{Comparative Literature Analysis}\label{subsec:comparative}
+Table~\ref{tab:capability} summarizes the reviewed themes against the six capabilities
+that the proposed system integrates. The pattern is consistent: existing works
+implemented one or two capabilities and left the remainder unaddressed. The contribution
+of this paper is not the invention of any single column but their coherent unification
+in one inspectable system, together with an explicit leakage analysis that few applied
+studies report.
+
+\begin{table}[t]
+\centering
+\caption{Capability comparison of representative prior work and this paper}
+\label{tab:capability}
+\small
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{@{}p{2.6cm} *{6}{>{\centering\arraybackslash}p{1.7cm}}@{}}
+\toprule
+Representative work & Risk assmt. & XAI & Guardrail & Allocation & Audit log & Leakage anal. \\
+\midrule
+Robo-advisory / allocation \cite{ref8,ref12} & \partialmark & \partialmark & \nomark & \yes & \nomark & \nomark \\
+Distress prediction \cite{ref18,ref19} & \yes & \partialmark & \nomark & \nomark & \nomark & \nomark \\
+K-means profiling \cite{ref20} & \partialmark & \nomark & \nomark & \nomark & \nomark & \nomark \\
+XAI for finance \cite{ref10,ref21} & \nomark & \yes & \nomark & \nomark & \nomark & \nomark \\
+Blockchain audit \cite{ref13,ref22} & \nomark & \nomark & \nomark & \nomark & \yes & \nomark \\
+Trust \& disclosure \cite{ref11,ref17} & \nomark & \partialmark & \nomark & \nomark & \nomark & \partialmark \\
+This work & \yes & \yes & \yes & \yes & \yes & \yes \\
+\bottomrule
+\end{tabular}
+\par\vspace{3pt}
+{\footnotesize\raggedright\textit{Legend:} \yes\ implemented and evaluated;\quad
+\partialmark\ discussed or partially addressed;\quad \nomark\ not addressed. The audit
+log in this work is an in-memory simulated ledger (Section~\ref{subsec:audit}).\par}
+\end{table}
+
+\subsection{Research Gap and Positioning}\label{subsec:positioning}
+Read together, the literature established each ingredient of a trustworthy financial
+recommender but not their integration. The gap this paper occupies is the assembly of
+interpretable risk assessment, per-decision explanation, a conservative safety layer,
+risk-aligned allocation, and verifiable logging into one pipeline whose properties are
+enforced by construction and whose weaknesses---chiefly the dominance of the rule layer
+over the learned model, and the arithmetic leakage between labels and features---are
+measured and reported. This positioning deliberately frames the contribution as one of
+honest systems integration rather than algorithmic novelty.

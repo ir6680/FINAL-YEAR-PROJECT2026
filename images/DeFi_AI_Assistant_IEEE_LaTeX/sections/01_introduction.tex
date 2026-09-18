@@ -1,0 +1,121 @@
+% =====================  SECTION I  =====================
+\section{Introduction}\label{sec:intro}
+
+\subsection{Background and Motivation}\label{subsec:background}
+Retail investing and digital finance have put sophisticated financial decisions in
+the hands of individuals who rarely have formal training in risk management.
+Artificial-intelligence tools now promise to democratize functions once reserved for
+professional advisors, from automated portfolio construction to personalized
+financial guidance \cite{ref1,ref2,ref8}, and machine learning has become a standard
+instrument for financial forecasting and for flagging individuals at financial risk
+\cite{ref3,ref7,ref18}. The same automation that makes these tools scalable also
+makes them hard to see into: a retail user is routinely asked to trust a single score
+with no explanation of how it was reached and no durable record of what was
+recommended or why.
+
+Three concerns have moved to the center of this literature. One is explainability: as
+neural models enter financial tasks, methods that attribute a decision to its inputs
+have become essential to using them responsibly \cite{ref10,ref12,ref21}. A second is
+trust and reliance---behavioral studies of AI financial advisors find that disclosing
+a system's limitations, rather than presenting it as infallible, produces more
+calibrated user reliance \cite{ref11}. The third, verifiability, follows from the
+stakes involved: because financial recommendations carry consequences, tamper-evident
+audit trails, often built on blockchain-style hashing, let a recommendation be checked
+afterward against what was actually issued \cite{ref13,ref16,ref22}. Cryptocurrency
+allocation sharpens all three, since the assets are volatile and the
+decentralized-finance setting adds liquidation and stablecoin-stability risks
+\cite{ref5,ref6}.
+
+\subsection{Problem Statement and Existing Limitations}\label{subsec:problem}
+Despite substantial progress on each concern individually, they are almost always
+addressed in isolation. Robo-advisory and portfolio systems optimize allocations but
+seldom expose an interpretable risk rationale \cite{ref8,ref12}; distress- and
+risk-prediction models classify users but stop short of translating a prediction into
+an actionable, safety-constrained recommendation \cite{ref18,ref19}; explainability
+research develops attribution methods largely in the abstract \cite{ref10,ref21}; and
+blockchain-audit research secures records without connecting them to a live decision
+process \cite{ref13,ref14,ref15}. A retail user is thus served by a patchwork of
+tools, none of which delivers a recommendation that is simultaneously data-driven,
+interpretable, conservative under uncertainty, and independently verifiable. A further
+and subtler limitation pervades applied financial machine learning: reported
+accuracies are frequently inflated by information leakage between how labels are
+constructed and what features a model is given, and by evaluation protocols that do
+not account for repeated entities \cite{ref4}. Systems are seldom candid about the gap
+between a headline metric and the quality of the decision a user ultimately receives.
+
+\subsection{Research Gap}\label{subsec:gap}
+The gap this work addresses is therefore integrative and methodological rather than
+algorithmic. No single, inspectable system in the reviewed literature carries a user's
+raw financial inputs through interpretable feature construction, unsupervised risk
+labeling, a leakage-aware classifier, an explicit safety layer, per-decision
+explanation, risk-aligned allocation, and a verifiable audit record---while being
+explicit about where information leaks, which component actually determines the
+outcome, and what the evidence does and does not support. Closing this gap requires not
+a new estimator but a coherent architecture with enforceable properties and an honest
+evaluation of them.
+
+\subsection{Objectives and Research Questions}\label{subsec:rqs}
+The objective of this work is to design, implement, and critically evaluate an
+end-to-end pipeline that integrates the five concerns above into a single
+decision-support tool, and to hold that tool to a transparent evidential standard.
+This objective is refined into six research questions:
+
+\begin{itemize}
+\item[\textbf{RQ1.}] Can a user's financial risk be assessed from a small set of raw,
+  deployable inputs while the ratios used to construct the risk labels are withheld
+  from the classifier, so that leakage can be reasoned about explicitly?
+\item[\textbf{RQ2.}] Do unsupervised clusters over interpretable financial ratios
+  correspond to coherent, monotonically ordered Low/Medium/High risk bands suitable as
+  proxy labels?
+\item[\textbf{RQ3.}] Can a supervised classifier reproduce those proxy labels from the
+  raw inputs alone with useful accuracy, and is a neural model warranted over simpler
+  baselines?
+\item[\textbf{RQ4.}] How can a learned signal, an unsupervised signal, and a
+  deterministic rule-based signal be reconciled so that the system's failure mode is to
+  over-warn rather than under-warn?
+\item[\textbf{RQ5.}] Can a single explanation strategy provide per-decision,
+  input-level attributions across different model types without retraining?
+\item[\textbf{RQ6.}] Can the reconciled risk band be mapped to a risk-aligned
+  cryptocurrency allocation and logged as a tamper-evident, independently verifiable
+  record?
+\end{itemize}
+
+\subsection{Contributions}\label{subsec:contributions}
+Against these questions, the paper makes the following contributions:
+
+\begin{itemize}
+\item[\textbf{C1)}] An integrated, end-to-end pipeline that unifies feature
+  engineering, unsupervised proxy labeling, leakage-aware classification, conservative
+  reconciliation, per-decision explanation, risk-aligned allocation, deterministic
+  simulation, and cryptographic audit logging in one inspectable system, surfaced
+  through a working application.
+\item[\textbf{C2)}] An explicit feature contract that separates the ratios used for
+  clustering from the raw inputs given to the classifier, together with a measured
+  analysis of the residual arithmetic leakage that column-level separation does not
+  remove.
+\item[\textbf{C3)}] A conservative guardrail and a most-cautious reconciliation rule
+  that provably cannot lower risk, accompanied by a quantitative demonstration that
+  this deterministic layer---not the learned model---determines the outcome for most
+  users.
+\item[\textbf{C4)}] A model-adaptive, occlusion-based explanation mechanism that yields
+  per-input influence scores for any probabilistic classifier in the pipeline without
+  retraining.
+\item[\textbf{C5)}] A risk-aligned allocation and a tamper-evident SHA-256 audit
+  record, integrated so that every issued recommendation is both explainable and
+  independently checkable.
+\item[\textbf{C6)}] A candid evaluation methodology in which label leakage, guardrail
+  dominance, and a statistically non-significant model-selection result are measured
+  and reported rather than assumed away---offered as a template for honest appraisal of
+  integrated financial AI systems.
+\end{itemize}
+
+\subsection{Paper Organization}\label{subsec:organization}
+The remainder of the paper is organized as follows. Section~\ref{sec:related} reviews
+related work thematically and positions the contribution against it.
+Section~\ref{sec:method} presents the proposed framework, the dataset, the
+mathematical formulation, and each pipeline component. Section~\ref{sec:results}
+describes the experimental setup and reports results, including the clustering,
+classification, comparative, guardrail, simulation, and auditability findings.
+Section~\ref{sec:discussion} discusses the implications, states the limitations and
+threats to validity in full, and separates the engineering contribution from the
+research contribution. Section~\ref{sec:conclusion} concludes and outlines future work.

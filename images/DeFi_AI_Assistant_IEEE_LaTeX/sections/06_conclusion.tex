@@ -1,0 +1,61 @@
+% =====================  SECTION VI  =====================
+\section{Conclusion and Future Work}\label{sec:conclusion}
+
+\subsection{Conclusion}\label{subsec:conclusion}
+This paper set out to build an integrated, explainable, and independently verifiable
+decision-support pipeline that carries a single user's raw financial inputs through risk
+assessment, safety enforcement, explanation, portfolio allocation, and tamper-evident
+logging---a combination the reviewed literature treats as five largely separate problems.
+The pipeline delivers that integration end to end: it engineers three interpretable ratios
+from five raw inputs, derives Low, Medium, and High risk segments by clustering (silhouette
+0.370, stable at an adjusted Rand index of 0.868), trains a leakage-aware MLP that
+reproduces the risk band at 91.0\% accuracy and 0.881 macro-F1, routes every prediction
+through a conservative guardrail that can only escalate risk, explains each decision with a
+model-adaptive feature-impact method, maps the reconciled band to a risk-aligned
+BTC/ETH/USDC allocation, and records a SHA-256-hashed, verifiable receipt for every
+recommendation.
+
+Equally central to the conclusion is what the work does not claim. The evaluation
+establishes that the conservative guardrail, not the learned model, determines most final
+recommendations; that the proxy labels are arithmetically entangled with the classifier
+inputs; that the MLP is not statistically better than logistic regression; and that the
+portfolio simulation rests on fixed synthetic returns. The contribution is therefore an
+engineering one---a coherent, inspectable integration of standard techniques with an
+explicit feature contract and a safety-first reconciliation---reported against an honest
+evidential standard rather than an inflated one. In answering its six research questions,
+the work shows that such a pipeline can be built and made transparent, while remaining
+candid that demonstrating real-world predictive validity lies outside its present scope.
+
+\subsection{Future Work}\label{subsec:future-work}
+The limitations map directly onto a program of future work, ordered by how much each would
+strengthen the evidential standing of the system:
+
+\begin{itemize}
+\item[\textbf{1)}] Replace the clustering-derived proxy labels with recorded default or
+  loss outcomes, so the classifier predicts a ground-truth target rather than a clustering
+  artifact \cite{ref18,ref19}.
+\item[\textbf{2)}] Adopt entity-level (grouped) splitting by identifier to remove the
+  entity-leakage concern and yield a trustworthy generalization estimate.
+\item[\textbf{3)}] Break the arithmetic label dependency by constructing labels from
+  information not fully recoverable from the classifier inputs, or by explicitly modeling
+  that dependency.
+\item[\textbf{4)}] Rebalance the guardrail and the model---including resolving the 60/75
+  medium-threshold inconsistency---so the learned component contributes to more decisions.
+\item[\textbf{5)}] Strengthen the explanation layer by adopting SHAP or a partial-derivative
+  sensitivity method and combining attributions, as the benchmark literature recommends
+  \cite{ref10,ref21}.
+\item[\textbf{6)}] Integrate historical or live market and DeFi data, modeling the
+  liquidation and stablecoin-instability risks documented in the literature, to turn the
+  deterministic projection into a genuine backtest \cite{ref5,ref6}.
+\item[\textbf{7)}] Deploy a real audit ledger via a smart contract, with attention to
+  storage, throughput, and oracle-trust costs, to make the auditability claim
+  production-grade \cite{ref13,ref14,ref15,ref22}.
+\item[\textbf{8)}] Move toward dynamic, causal allocation---reinforcement-learning
+  rebalancing or an explainable optimizer---framed with the causal-inference caution raised
+  for financial planning \cite{ref4,ref8,ref12}.
+\end{itemize}
+
+Taken together, these directions would progressively convert the present prototype---an
+honest demonstration of integration---into a system whose predictive and financial claims
+could be defended on external evidence. That progression, rather than any single algorithmic
+advance, is the path these findings point toward.

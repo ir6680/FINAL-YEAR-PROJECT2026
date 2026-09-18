@@ -1,0 +1,180 @@
+{
+  "dataset": "personal_finance_tracker_dataset.csv",
+  "run_timestamp_utc": "2026-05-20T20:26:53.065622+00:00",
+  "selected_model_name": "Multilayer Perceptron",
+  "final_classifier": "MLPClassifier",
+  "classification_features": [
+    "monthly_income",
+    "credit_score",
+    "rent_or_mortgage",
+    "essential_spending",
+    "discretionary_spending"
+  ],
+  "cluster_features": [
+    "surplus",
+    "expense_ratio",
+    "debt_pressure"
+  ],
+  "removed_leaky_columns": [
+    "user_id",
+    "date",
+    "cash_flow_status",
+    "financial_advice_score",
+    "financial_stress_level",
+    "actual_savings",
+    "savings_goal_met"
+  ],
+  "blocked_classifier_columns": [
+    "user_id",
+    "date",
+    "cash_flow_status",
+    "financial_advice_score",
+    "financial_stress_level",
+    "actual_savings",
+    "savings_goal_met",
+    "monthly_expense_total",
+    "surplus",
+    "expense_ratio",
+    "debt_pressure",
+    "cluster_id",
+    "cluster",
+    "risk_level",
+    "risk_band"
+  ],
+  "model_comparison": [
+    {
+      "model": "Multilayer Perceptron",
+      "train_accuracy": 0.919583,
+      "test_accuracy": 0.91,
+      "train_macro_f1": 0.888,
+      "test_macro_f1": 0.880765,
+      "roc_auc_ovr_macro": 0.985903,
+      "pr_auc_macro": 0.951365
+    },
+    {
+      "model": "Random Forest",
+      "train_accuracy": 1.0,
+      "test_accuracy": 0.895,
+      "train_macro_f1": 1.0,
+      "test_macro_f1": 0.868082,
+      "roc_auc_ovr_macro": 0.976438,
+      "pr_auc_macro": 0.923256
+    },
+    {
+      "model": "Logistic Regression",
+      "train_accuracy": 0.905833,
+      "test_accuracy": 0.891667,
+      "train_macro_f1": 0.879961,
+      "test_macro_f1": 0.863716,
+      "roc_auc_ovr_macro": 0.986053,
+      "pr_auc_macro": 0.951977
+    },
+    {
+      "model": "Decision Tree",
+      "train_accuracy": 0.86375,
+      "test_accuracy": 0.795,
+      "train_macro_f1": 0.845036,
+      "test_macro_f1": 0.764769,
+      "roc_auc_ovr_macro": 0.927602,
+      "pr_auc_macro": 0.835853
+    }
+  ],
+  "cross_validation": [
+    {
+      "model": "Multilayer Perceptron",
+      "cv_accuracy_mean": 0.912333,
+      "cv_accuracy_std": 0.009226,
+      "cv_macro_f1_mean": 0.866533,
+      "cv_macro_f1_std": 0.017966,
+      "cv_silhouette_mean": 0.374396
+    },
+    {
+      "model": "Logistic Regression",
+      "cv_accuracy_mean": 0.895,
+      "cv_accuracy_std": 0.012953,
+      "cv_macro_f1_mean": 0.849303,
+      "cv_macro_f1_std": 0.024844,
+      "cv_silhouette_mean": 0.374396
+    },
+    {
+      "model": "Random Forest",
+      "cv_accuracy_mean": 0.898667,
+      "cv_accuracy_std": 0.008654,
+      "cv_macro_f1_mean": 0.846013,
+      "cv_macro_f1_std": 0.021082,
+      "cv_silhouette_mean": 0.374396
+    },
+    {
+      "model": "Decision Tree",
+      "cv_accuracy_mean": 0.827,
+      "cv_accuracy_std": 0.009854,
+      "cv_macro_f1_mean": 0.788719,
+      "cv_macro_f1_std": 0.019648,
+      "cv_silhouette_mean": 0.374396
+    }
+  ],
+  "curve_auc": [
+    {
+      "model": "Multilayer Perceptron",
+      "micro_roc_auc": 0.988768,
+      "micro_pr_auc": 0.978559
+    },
+    {
+      "model": "Logistic Regression",
+      "micro_roc_auc": 0.981315,
+      "micro_pr_auc": 0.963013
+    },
+    {
+      "model": "Random Forest",
+      "micro_roc_auc": 0.980447,
+      "micro_pr_auc": 0.96198
+    },
+    {
+      "model": "Decision Tree",
+      "micro_roc_auc": 0.930224,
+      "micro_pr_auc": 0.85246
+    }
+  ],
+  "selected_model_accuracy_ci_95": [
+    0.8883333333333333,
+    0.9325416666666666
+  ],
+  "selected_model_macro_f1_ci_95": [
+    0.8470689357609316,
+    0.9119212679696599
+  ],
+  "mcnemar_checks": [
+    {
+      "selected_model": "Multilayer Perceptron",
+      "other_model": "Logistic Regression",
+      "n_selected_correct_other_wrong": 24,
+      "n_selected_wrong_other_correct": 13,
+      "mcnemar_chi2": 2.702703,
+      "approx_p_value": 0.100178
+    },
+    {
+      "selected_model": "Multilayer Perceptron",
+      "other_model": "Decision Tree",
+      "n_selected_correct_other_wrong": 82,
+      "n_selected_wrong_other_correct": 13,
+      "mcnemar_chi2": 48.673684,
+      "approx_p_value": 0.0
+    },
+    {
+      "selected_model": "Multilayer Perceptron",
+      "other_model": "Random Forest",
+      "n_selected_correct_other_wrong": 22,
+      "n_selected_wrong_other_correct": 13,
+      "mcnemar_chi2": 1.828571,
+      "approx_p_value": 0.176296
+    }
+  ],
+  "cluster_silhouette_full": 0.37020416967720454,
+  "artifacts": {
+    "bundle": "models/finance_risk_bundle_final.joblib",
+    "model_comparison": "results/model_comparisons/model_comparison.csv",
+    "cv_validation": "results/metrics/cv_validation.csv",
+    "labeled_classification": "results/tables/classification_dataset_with_risk_labels.csv",
+    "labeled_clustered": "results/tables/clustered_dataset_with_risk_labels.csv"
+  }
+}

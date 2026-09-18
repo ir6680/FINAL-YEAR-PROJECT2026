@@ -1,0 +1,177 @@
+{
+  "notebook": "notebooks/main_research_notebook.ipynb",
+  "output_dir": "images/confusion_matrices",
+  "dpi_required": 600,
+  "class_order": [
+    "Low Risk",
+    "Medium Risk",
+    "High Risk"
+  ],
+  "test_samples": 600,
+  "models": [
+    {
+      "model": "Logistic Regression",
+      "confusion_matrix": [
+        [
+          236,
+          6,
+          0
+        ],
+        [
+          22,
+          238,
+          36
+        ],
+        [
+          0,
+          1,
+          61
+        ]
+      ],
+      "matrix_shape": [
+        3,
+        3
+      ],
+      "matrix_total": 600,
+      "accuracy_from_matrix": 0.8916666666666667,
+      "macro_f1_from_predictions": 0.8637159077258124,
+      "reported_test_accuracy": 0.8916666666666667,
+      "reported_test_macro_f1": 0.8637159077258124,
+      "accuracy_delta_vs_reported": 0.0,
+      "macro_f1_delta_vs_reported": 0.0,
+      "image": {
+        "png": "images/confusion_matrices/confusion_matrix_logistic_regression.png",
+        "svg": "images/confusion_matrices/confusion_matrix_logistic_regression.svg",
+        "width_px": 4320,
+        "height_px": 3840,
+        "dpi": [
+          600,
+          600
+        ]
+      }
+    },
+    {
+      "model": "Decision Tree",
+      "confusion_matrix": [
+        [
+          225,
+          17,
+          0
+        ],
+        [
+          51,
+          198,
+          47
+        ],
+        [
+          0,
+          8,
+          54
+        ]
+      ],
+      "matrix_shape": [
+        3,
+        3
+      ],
+      "matrix_total": 600,
+      "accuracy_from_matrix": 0.795,
+      "macro_f1_from_predictions": 0.7647694453964181,
+      "reported_test_accuracy": 0.795,
+      "reported_test_macro_f1": 0.7647694453964181,
+      "accuracy_delta_vs_reported": 0.0,
+      "macro_f1_delta_vs_reported": 0.0,
+      "image": {
+        "png": "images/confusion_matrices/confusion_matrix_decision_tree.png",
+        "svg": "images/confusion_matrices/confusion_matrix_decision_tree.svg",
+        "width_px": 4320,
+        "height_px": 3840,
+        "dpi": [
+          600,
+          600
+        ]
+      }
+    },
+    {
+      "model": "Multilayer Perceptron",
+      "confusion_matrix": [
+        [
+          235,
+          7,
+          0
+        ],
+        [
+          20,
+          260,
+          16
+        ],
+        [
+          0,
+          11,
+          51
+        ]
+      ],
+      "matrix_shape": [
+        3,
+        3
+      ],
+      "matrix_total": 600,
+      "accuracy_from_matrix": 0.91,
+      "macro_f1_from_predictions": 0.8807650212106445,
+      "reported_test_accuracy": 0.91,
+      "reported_test_macro_f1": 0.8807650212106445,
+      "accuracy_delta_vs_reported": 0.0,
+      "macro_f1_delta_vs_reported": 0.0,
+      "image": {
+        "png": "images/confusion_matrices/confusion_matrix_multilayer_perceptron.png",
+        "svg": "images/confusion_matrices/confusion_matrix_multilayer_perceptron.svg",
+        "width_px": 4320,
+        "height_px": 3840,
+        "dpi": [
+          600,
+          600
+        ]
+      }
+    },
+    {
+      "model": "Random Forest",
+      "confusion_matrix": [
+        [
+          231,
+          11,
+          0
+        ],
+        [
+          24,
+          255,
+          17
+        ],
+        [
+          0,
+          11,
+          51
+        ]
+      ],
+      "matrix_shape": [
+        3,
+        3
+      ],
+      "matrix_total": 600,
+      "accuracy_from_matrix": 0.895,
+      "macro_f1_from_predictions": 0.8680817351416864,
+      "reported_test_accuracy": 0.895,
+      "reported_test_macro_f1": 0.8680817351416864,
+      "accuracy_delta_vs_reported": 0.0,
+      "macro_f1_delta_vs_reported": 0.0,
+      "image": {
+        "png": "images/confusion_matrices/confusion_matrix_random_forest.png",
+        "svg": "images/confusion_matrices/confusion_matrix_random_forest.svg",
+        "width_px": 4320,
+        "height_px": 3840,
+        "dpi": [
+          600,
+          600
+        ]
+      }
+    }
+  ]
+}

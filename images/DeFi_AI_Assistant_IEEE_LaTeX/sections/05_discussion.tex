@@ -1,0 +1,180 @@
+% =====================  SECTION V  =====================
+\section{Discussion}\label{sec:discussion}
+
+\subsection{Interpretation of Findings}\label{subsec:interpretation}
+The results support a nuanced reading of the system. The integration objective is met: a
+single user's raw inputs flow, without manual intervention, into an explained,
+risk-aligned, and independently verifiable recommendation, and the safety properties hold
+by construction rather than by training. What the evaluation also shows is that the
+headline classification accuracy is the wrong summary of how the system behaves. The
+deterministic guardrail escalates 60.6\% of users to High risk on cash-flow grounds and is
+the binding signal for the majority, so the learned model is decisive for only a minority
+of users; its 91.0\% accuracy is a real property of one component, measured on held-out
+data, but says little about end-to-end decision quality. The comparative and statistical
+results reinforce this modest reading: the MLP is statistically indistinguishable from
+logistic regression, which in fact edges it on both area-under-curve metrics, so a neural
+model is not shown to be necessary. These are not incidental caveats---they are the central
+empirical content of the evaluation, and reporting them is part of the contribution.
+
+\subsection{Engineering versus Research Contribution}\label{subsec:contribution-framing}
+Separating the two kinds of contribution is what keeps the claims honest. The engineering
+contribution is real and is the substance of the work: an integrated pipeline that unifies
+feature engineering, unsupervised proxy labeling, a leakage-aware classifier, a
+conservative guardrail, most-cautious reconciliation, model-adaptive explanation,
+risk-aligned allocation, deterministic simulation, and a hashed, verifiable audit log in
+one inspectable system with an explicit feature contract and a safety layer that cannot
+lower risk. That combination is exactly what the reviewed literature treats as missing. The
+research contribution is stated more modestly: the individual techniques are standard, and
+the results do not establish that any is novel or that the learned model beats a simple
+baseline. What the work contributes on the research side is methodological---a
+demonstration that an integrated financial-recommendation pipeline can be held to an honest
+evidential standard in which leakage is measured, guardrail dominance is quantified, and a
+model-selection result that fails significance is reported rather than dropped. Ordinary
+component integration is claimed nowhere as novel, and no claim is made of validation
+against real financial outcomes.
+
+\subsection{Limitations}\label{subsec:limitations}
+The critical review surfaced seven limitations, stated here plainly with their severity in
+Table~\ref{tab:limitations}. Three are of high severity. Guardrail dominance means the
+accuracy figure does not describe end-to-end behavior. Arithmetic label leakage means that,
+although the three ratios are withheld from the classifier at the column level, surplus and
+expense ratio are deterministic functions of the raw inputs and are therefore recoverable,
+making the classification task easier than one with independent labels; the strong
+surplus--expense-ratio correlation in Fig.~\ref{fig:corr} is the empirical footprint of
+this dependency. Most fundamentally, the labels are proxies produced by clustering, not
+recorded default or loss outcomes, so no real-world predictive validity is established. The
+medium-severity items are the statistically unjustified selection of the MLP over logistic
+regression, the corrected backtest indexing error (which even corrected rests on fixed
+synthetic returns), and entity leakage from a row-level split over data with only 944
+unique users among 3,000 rows. Finally, at low-to-medium severity, part of the source tree
+is a not-yet-extracted presentation layer, the ledger is an in-memory simulation rather
+than a deployed chain, and the explainer is occlusion-based rather than SHAP or a
+partial-derivative method.
+
+\begin{table}[t]
+\centering
+\caption{Summary of limitations and their effect on claims}
+\label{tab:limitations}
+\setlength{\tabcolsep}{4pt}
+\begin{tabularx}{\linewidth}{@{}p{3.2cm} >{\centering\arraybackslash}p{1.4cm} L@{}}
+\toprule
+Limitation & Severity & Effect on claims \\
+\midrule
+Guardrail dominance & High & Accuracy does not describe end-to-end decision quality. \\
+Arithmetic label leakage & High & Classification easier than with independent labels. \\
+Proxy labels, no ground truth & High & No real-world predictive validity established. \\
+Non-significant model selection & Medium & MLP not statistically better than logistic regression. \\
+Backtest indexing error & Medium & Original ROIs inflated; corrected values used. \\
+Entity leakage in split & Medium & Generalization may be overstated. \\
+Fa\c{c}ade layer / simulated ledger & Low--Med & Prototype-stage engineering, not production. \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{Threats to Validity}\label{subsec:threats}
+The limitations map onto the standard categories of validity as follows, so that a reader
+can locate each concern precisely.
+
+\begin{itemize}
+\item[\textbf{Internal.}] The arithmetic recoverability of two clustering features from the
+  classifier inputs, and the row-level split over repeated identifiers, both create paths
+  by which apparent performance can be inflated relative to a genuinely independent
+  prediction task.
+\item[\textbf{Construct.}] The target is a clustering-derived proxy for risk, not a
+  recorded financial outcome; the twelve-month ROI is computed from fixed constants rather
+  than market data. Both measure the intended construct only indirectly.
+\item[\textbf{External.}] The data are synthetic and single-source, and the returns are
+  hardcoded, so results should not be extrapolated to real users or markets without
+  revalidation on recorded data.
+\item[\textbf{Conclusion.}] The small High-risk support (62 holdout cases) widens the
+  interval on its per-class F1, and the McNemar tests are underpowered to detect small
+  differences; the non-significant results are therefore reported as an absence of
+  demonstrated superiority rather than proof of equivalence.
+\end{itemize}
+
+\subsection{Research Questions and Objective Fulfillment}\label{subsec:rq-fulfillment}
+Table~\ref{tab:rqmap} closes the loop between the six research questions of
+Section~\ref{subsec:rqs} and the evidence gathered in Section~\ref{sec:results}, assigning
+each an explicit status of Supported, Partially supported, or Not demonstrated together
+with the method and result that justify it. The verdicts are deliberately mixed. Three
+questions are fully supported: the clustering yields coherent, monotonically ordered proxy
+bands (RQ2), the reconciliation enforces an over-warn failure mode by construction (RQ4),
+and the allocation-and-audit path produces tamper-evident, re-verifiable records (RQ6). The
+remaining three are only partially supported, and are labelled so on purpose---risk can be
+assessed from the withheld-ratio inputs, but column-level separation does not remove the
+residual arithmetic leakage (RQ1); the classifier reproduces the labels with high accuracy,
+yet a neural model is not shown to be warranted over logistic regression (RQ3); and the
+explanation mechanism returns per-decision attributions without retraining, but only its
+MLP branch is exercised in deployment (RQ5).
+
+\begin{table*}[t]
+\centering
+\caption{Mapping of research questions to methods, evidence, and status}
+\label{tab:rqmap}
+\footnotesize
+\setlength{\tabcolsep}{5pt}
+\renewcommand{\arraystretch}{1.15}
+\begin{tabularx}{\textwidth}{@{}>{\centering\arraybackslash}p{0.8cm} L L L >{\raggedright\arraybackslash}p{1.9cm}@{}}
+\toprule
+RQ & Research question / objective & Method / experiment & Evidence / result & Status \\
+\midrule
+RQ1 & Assess risk from raw, deployable inputs while withholding the label-defining ratios,
+so leakage is explicit. &
+Feature contract partitioning $F_{\text{cls}}$ and $F_{\text{clu}}$
+(Eq.~\ref{eq:contract}) with a validation abort; residual-leakage analysis
+(Sec.~\ref{subsec:contract},~\ref{subsec:limitations}). &
+Classifier uses five raw inputs only; column separation is enforced, but surplus and
+expense ratio stay arithmetically recoverable, so leakage is measured and disclosed rather
+than removed. &
+Partially supported \\
+\addlinespace
+RQ2 & Do interpretable-ratio clusters form coherent, monotonically ordered Low/Medium/High
+proxy bands? &
+K-means ($k = 3$) on standardized ratios; silhouette, Calinski--Harabasz,
+Davies--Bouldin, and ARI stability; cluster profiling (Table~\ref{tab:cluster}). &
+Silhouette 0.370 and ARI $0.868 \pm 0.064$; mean surplus falls and mean expense ratio
+rises monotonically from Low to High (Table~\ref{tab:cluster}). &
+Supported \\
+\addlinespace
+RQ3 & Can a classifier reproduce the proxy labels from raw inputs with useful accuracy, and
+is a neural model warranted over simpler baselines? &
+MLP versus logistic regression, random forest, and decision tree; McNemar tests; five-fold
+CV; bootstrap CIs (Tables~\ref{tab:perclass}--\ref{tab:stats}). &
+91.0\% accuracy and 0.881 macro-F1, but the MLP is not significantly better than logistic
+regression ($p = 0.100$) or random forest ($p = 0.176$), which even edge it on AUC. &
+Partially supported \\
+\addlinespace
+RQ4 & Reconcile the learned, unsupervised, and rule-based signals so the failure mode is to
+over-warn. &
+Escalate-only guardrail (Eq.~\ref{eq:guardrail}) and most-cautious rule
+$y^{*} = \max(m, g, k)$ (Eq.~\ref{eq:reconcile}); guardrail-dominance measurement
+(Sec.~\ref{subsec:guardrail-dom}). &
+Reconciliation cannot lower risk by construction; the guardrail is $\geq$ the cluster
+signal for 100\% of users and escalates 60.6\% to High risk. &
+Supported \\
+\addlinespace
+RQ5 & Provide per-decision, input-level attributions across model types without retraining.
+&
+Model-adaptive occlusion sensitivity (Eq.~\ref{eq:occlusion}): mean-imputation for the MLP,
+signed coefficients for linear models, impurity for trees. &
+Yields per-input influence scores for the deployed MLP without retraining; the other
+branches exist by construction, but only the MLP branch is exercised. &
+Partially supported \\
+\addlinespace
+RQ6 & Map the reconciled band to a risk-aligned crypto allocation and log a tamper-evident,
+verifiable record. &
+Deterministic band$\rightarrow$(BTC, ETH, USDC) map (Eq.~\ref{eq:alloc}); SHA-256 hashing
+of a canonical payload with re-hash verification (Eq.~\ref{eq:hash}). &
+Allocation is deterministic and risk-monotone; any change to a logged payload changes its
+digest and is detected---though against an in-memory simulated ledger, not a live chain. &
+Supported \\
+\bottomrule
+\end{tabularx}
+\par\vspace{3pt}
+{\footnotesize\itshape\raggedright The three `supported' verdicts rest on properties that
+hold by construction (RQ4, RQ6) or on direct metric evidence (RQ2); the three `partially
+supported' verdicts mark exactly where an honest reading stops short---residual leakage, an
+unjustified neural model, and a single exercised explanation branch. No verdict claims
+validation against real financial outcomes, which remains outside the scope of this
+proxy-labelled study.\par}
+\end{table*}

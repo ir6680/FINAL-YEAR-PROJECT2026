@@ -1,0 +1,301 @@
+% =====================  SECTION III  =====================
+\section{Proposed Methodology}\label{sec:method}
+
+\subsection{System Overview}\label{subsec:overview}
+The system is a linear pipeline of nine stages that carries a user's raw financial
+inputs through to an explained, risk-aligned, and audited recommendation. Five raw
+inputs are engineered into three interpretable ratios; the ratios are clustered to
+produce proxy risk labels; a classifier learns to reproduce those labels from the raw
+inputs alone under a feature contract; a deterministic guardrail and a reconciliation
+rule enforce conservatism; an occlusion explainer attributes the decision to its
+inputs; the reconciled band is mapped to a cryptocurrency allocation, projected over
+twelve months, and hashed into an audit record. The complete flow is shown in
+Fig.~\ref{fig:arch}. Each stage below is presented with the expression it implements,
+its variables, and the property it is designed to guarantee; only methods that the
+system actually implements are formalized.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\linewidth]{fig_architecture_v2.png}
+\caption{End-to-end architecture, separated into the offline training pipeline (top)
+and the online inference pipeline (bottom). During training the five raw inputs are
+engineered into three ratios that are standardized and clustered ($k = 3$) to create
+the proxy risk labels, whereas the classifier is trained on the five raw inputs only: a
+leakage-aware feature contract (Eq.~\ref{eq:contract}) keeps the three ratios out of the
+classifier feature matrix, and only the proxy label crosses that boundary, as the
+supervised target. The fitted scaler, centroids, preprocessor, and network weights are
+then frozen. At inference a user's inputs drive three parallel signals---the frozen MLP
+($m$), the frozen cluster assignment ($k$), and the deterministic guardrail
+($g$)---which are reconciled to the most cautious band $y^{*} = \max(m, g, k)$
+(Eq.~\ref{eq:reconcile}), then explained by occlusion, mapped to a BTC/ETH/USDC
+allocation, simulated over twelve months, and written to a hashed, verifiable ledger.}
+\label{fig:arch}
+\end{figure}
+
+\subsection{Dataset and Provenance}\label{subsec:dataset}
+The system is developed and evaluated on a synthetic personal-finance dataset of 3,000
+records. The data are generated rather than collected, which permits controlled coverage
+of financial scenarios but carries the external-validity caveat discussed in
+Section~\ref{sec:discussion}. Two properties of the data are material to the evaluation
+and are therefore stated plainly. First, although the file contains 3,000 rows, it holds
+only 944 unique user identifiers, so roughly 95.8\% of rows are repeat observations of a
+user already present elsewhere in the data; a naive row-level split therefore allows the
+same individual to appear in both training and test partitions. Second, each record is
+tagged with one of three macro scenarios---normal, inflation, or recession---which shapes
+the distribution of incomes and expenses. Table~\ref{tab:dataset} summarizes the
+composition and the train/test protocol.
+
+\begin{table}[t]
+\centering
+\caption{Dataset composition and evaluation protocol}
+\label{tab:dataset}
+\begin{tabularx}{\linewidth}{@{}l L@{}}
+\toprule
+Property & Value \\
+\midrule
+Records / unique users & 3,000 / 944 ($\approx$95.8\% repeat rows) \\
+Origin & Synthetic; 28 raw columns \\
+Train / test split & 2,400 / 600 (80/20, seed 42) \\
+Classifier inputs & 5 raw, user-facing fields \\
+Cluster features & 3 engineered ratios \\
+Proxy-label balance & Low 44.9\% $\cdot$ Medium 45.9\% $\cdot$ High 9.2\% \\
+Scenario tag & normal / inflation / recession \\
+Toolchain & scikit-learn 1.5.0, fixed seed \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.55\linewidth]{fig_corr_heatmap.png}
+\caption{Pearson correlation among the engineered financial quantities on the synthetic
+data. Surplus and expense ratio are strongly anti-correlated ($-0.89$) and income and
+surplus are strongly correlated (0.81), reflecting their shared algebraic origin.}
+\label{fig:corr}
+\end{figure}
+
+\subsection{Feature Engineering}\label{subsec:feature-eng}
+Each user supplies monthly income, a credit score, rent or mortgage, essential spending,
+discretionary spending, and a loan payment. Total non-debt expenditure is the sum of the
+three living-cost components, with the loan payment held out so that debt burden is not
+double-counted:
+\begin{equation}\label{eq:etotal}
+E_{\text{total}} = R + S_{\text{ess}} + S_{\text{disc}}
+\end{equation}
+Monthly surplus is the income remaining after non-debt expenditure, and is the single
+strongest indicator of financial headroom in the system:
+\begin{equation}\label{eq:surplus}
+\text{surplus} = I - E_{\text{total}}
+\end{equation}
+The expense ratio expresses non-debt cost as a percentage of income, so that a value at
+or above 100\% signals that ordinary spending alone consumes the entire income:
+\begin{equation}\label{eq:expratio}
+\text{expense\_ratio} = (E_{\text{total}} / I) \times 100
+\end{equation}
+Debt pressure isolates the loan burden as a percentage of income:
+\begin{equation}\label{eq:debt}
+\text{debt\_pressure} = (L / I) \times 100
+\end{equation}
+In Equations~\eqref{eq:etotal}--\eqref{eq:debt}, $I$ is monthly income, $R$ rent or
+mortgage, $S_{\text{ess}}$ and $S_{\text{disc}}$ essential and discretionary spending,
+and $L$ the loan payment. When income is zero the two ratios are undefined, so the
+implementation substitutes a fixed sentinel (999.0) that flags the record as an
+extreme-risk outlier rather than dividing by zero. Table~\ref{tab:contract} lists every
+variable together with the feature set it belongs to.
+
+\subsection{The Leakage-Aware Feature Contract}\label{subsec:contract}
+Because the three ratios are used to construct the labels, handing them to the classifier
+would let it trivially recover its own target. The system therefore enforces a feature
+contract that partitions the columns into a clustering set and a disjoint classifier set:
+\begin{equation}\label{eq:contract}
+F_{\text{clu}} \cap F_{\text{cls}} = \emptyset
+\end{equation}
+with $F_{\text{clu}}$ = \{surplus, expense\_ratio, debt\_pressure\} and $F_{\text{cls}}$
+= \{monthly\_income, credit\_score, rent\_or\_mortgage, essential\_spending,
+discretionary\_spending\}. A validation routine aborts training if any blocked column
+reaches the classifier matrix. This column-level separation is real but incomplete, and
+the system reports the gap rather than concealing it: because surplus and expense\_ratio
+are algebraic functions of the classifier inputs
+(Equations~\eqref{eq:etotal}--\eqref{eq:expratio}), two of the three clustering features
+are exactly reconstructible from $F_{\text{cls}}$. Only debt\_pressure is truly withheld,
+since it requires the loan payment, which is not a classifier input and is in fact set to
+zero at inference. This residual arithmetic leakage is the principal reason a high
+classification accuracy is attainable, and it is quantified in
+Section~\ref{sec:discussion}.
+
+\begin{table}[t]
+\centering
+\caption{Variables and the leakage-aware feature contract}
+\label{tab:contract}
+\begin{tabularx}{\linewidth}{@{}l L L >{\centering\arraybackslash}p{2.3cm}@{}}
+\toprule
+Symbol & Meaning & Feature set & Recoverable from $F_{\text{cls}}$ \\
+\midrule
+$I$ & Monthly income & Classifier & --- \\
+credit & Credit score & Classifier & --- \\
+$R$ & Rent / mortgage & Classifier & --- \\
+$S_{\text{ess}}$ & Essential spending & Classifier & --- \\
+$S_{\text{disc}}$ & Discretionary spending & Classifier & --- \\
+$L$ & Loan payment & Input (zeroed at inference) & --- \\
+surplus & $I - E_{\text{total}}$ & Cluster & Yes \\
+expense\_ratio & $(E_{\text{total}} / I) \times 100$ & Cluster & Yes \\
+debt\_pressure & $(L / I) \times 100$ & Cluster & No (needs $L$) \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{Proxy Label Generation via Clustering}\label{subsec:clustering}
+Because the data record no realized default or loss, risk labels are produced
+unsupervised. The three ratios live on very different scales, so each is standardized to
+zero mean and unit variance, with the statistics estimated on the training partition
+only:
+\begin{equation}\label{eq:standardize}
+z_j = (x_j - \mu_j) / \sigma_j
+\end{equation}
+K-means then partitions the standardized vectors into $k$ clusters by minimizing the
+within-cluster sum of squared Euclidean distances to the cluster centroids, assigning
+each point to its nearest centroid:
+\begin{equation}\label{eq:kmeans}
+J = \sum_{i=1}^{k} \sum_{x \in C_i} \lVert x - \mu_i \rVert^2
+\end{equation}
+\begin{equation}\label{eq:assign}
+c(x) = \arg\min_k \lVert x - \mu_k \rVert^2
+\end{equation}
+where $C_i$ is the set of points in cluster $i$, $\mu_i$ its centroid, and $J$ the
+objective minimized. The cluster count is fixed at $k = 3$ to match the intended
+Low/Medium/High banding. This is a documented trade-off rather than an assumption: a
+two-cluster solution scores a higher silhouette (0.440), but two clusters cannot express
+a three-band policy, so the three-cluster configuration (silhouette 0.370, adjusted Rand
+index $0.868 \pm 0.064$ across resampling) is retained. Fitted clusters are ordered into
+risk bands by profile---the highest-surplus cluster becomes Low risk and the
+highest-expense-ratio cluster becomes High risk.
+
+\subsection{Risk Classification}\label{subsec:classification}
+A multilayer perceptron with two hidden layers of 64 and 32 units maps the classifier
+feature vector to a risk band. Each hidden layer applies an affine transform and a
+rectified-linear activation, and the output layer produces a distribution over the three
+classes by softmax:
+\begin{equation}\label{eq:h1}
+h^{(1)} = \mathrm{ReLU}(W^{(1)}x + b^{(1)})
+\end{equation}
+\begin{equation}\label{eq:h2}
+h^{(2)} = \mathrm{ReLU}(W^{(2)}h^{(1)} + b^{(2)})
+\end{equation}
+\begin{equation}\label{eq:softmax}
+\hat{y}_c = \mathrm{softmax}(W^{(3)}h^{(2)} + b^{(3)})_c
+\end{equation}
+The network is trained by minimizing the multiclass cross-entropy between the predicted
+distribution and the one-hot proxy label over the $N$ training examples:
+\begin{equation}\label{eq:celoss}
+L = -\frac{1}{N}\sum_{i=1}^{N}\sum_{c=1}^{3} y_{i,c}\log \hat{y}_{i,c}
+\end{equation}
+where $W^{(l)}$ and $b^{(l)}$ are the weights and biases of layer $l$, $\hat{y}_c$ the
+predicted probability of class $c$, and $y_{i,c}$ the one-hot target. The configuration
+of the clustering and classifier is given in Table~\ref{tab:config}.
+
+\begin{table}[t]
+\centering
+\caption{Clustering and classifier configuration}
+\label{tab:config}
+\begin{tabularx}{\linewidth}{@{}l L@{}}
+\toprule
+Component & Setting \\
+\midrule
+Clustering & K-means, $k = 3$, n\_init = 50, seed 42 \\
+Model search & K-means \& GMM ($k = 2$--$6$), DBSCAN---16 configs \\
+Classifier & MLP, hidden (64, 32), ReLU, softmax(3) \\
+Solver / regularization & Adam; L2, $\alpha = 0.001$ \\
+Early stopping & val\_fraction 0.15, patience 20, max\_iter 1000 \\
+Scaling & StandardScaler fitted on train only \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{Rule-Based Safety Guardrail}\label{subsec:guardrail}
+A statistical prediction alone is not a safe basis for advice, so the classifier output
+passes through a deterministic guardrail that encodes conservative cash-flow rules and
+can only ever raise concern:
+\begin{equation}\label{eq:guardrail}
+g = \begin{cases}
+2 & \text{if } (\text{surplus} < 0 \ \lor\ \text{expense\_ratio} \geq 90),\\
+1 & \text{if } \text{expense\_ratio} \geq 60,\\
+0 & \text{otherwise.}
+\end{cases}
+\end{equation}
+where 0, 1, and 2 denote Low, Medium, and High risk. A user whose spending exceeds
+income, or whose expense ratio reaches 90\%, is treated as High risk irrespective of the
+model. The deployed guardrail routine additionally escalates on debt pressure---to High
+when debt\_pressure $\geq$ 35\% and to Medium when debt\_pressure $\geq$ 20\%---but on
+this dataset those branches are almost entirely subsumed by the cash-flow conditions:
+including them leaves the guardrail-only High share unchanged at 60.6\% and shifts the
+Low/Medium split by under 0.2 percentage points, so \eqref{eq:guardrail} states the
+cash-flow conditions that drive the analysis in Section~\ref{subsec:guardrail-dom}. A
+separate recommender module applies a different medium-risk threshold (75 rather than
+60); this inconsistency is disclosed as a limitation in Section~\ref{sec:discussion}.
+
+\subsection{Most-Cautious Reconciliation}\label{subsec:reconciliation}
+The final band reconciles the model prediction $m$, the guardrail $g$, and the cluster
+assignment $k$ by taking the most cautious of the three under the order Low $<$ Medium
+$<$ High:
+\begin{equation}\label{eq:reconcile}
+y^{*} = \max(m, g, k)
+\end{equation}
+This guarantees that the assessed risk is never lower than any individual signal implies,
+so neither a classifier error nor an optimistic cluster can yield an unsafely low
+recommendation. Section~\ref{sec:results} quantifies how often each signal is decisive;
+the guardrail is the binding signal for most users.
+
+\subsection{Model-Adaptive Explanation}\label{subsec:explanation}
+To explain a decision, the system measures how sensitive the predicted probability is to
+each input. For the deployed MLP, which exposes no linear coefficients, the influence of
+feature $j$ is estimated by occlusion: the feature is replaced by its mean and the
+resulting drop in the predicted probability of the assigned class $\hat{c}$ is recorded:
+\begin{equation}\label{eq:occlusion}
+\Delta_j = \hat{y}_{\hat{c}}(x) - \hat{y}_{\hat{c}}(x_{-j})
+\end{equation}
+A large influence means the feature strongly supported the prediction. The strategy is
+model-adaptive---a linear model would instead report signed coefficients and a tree
+ensemble impurity importances---but for the deployed network the mean-imputation
+occlusion branch is the one actually exercised. This is an occlusion-based sensitivity
+method; it is neither SHAP nor a partial-derivative sensitivity method, and is not
+described as such.
+
+\subsection{Risk-Aligned Allocation}\label{subsec:allocation}
+The reconciled band maps deterministically to a fixed Bitcoin/Ethereum/USDC allocation
+that scales crypto exposure down and stablecoin weighting up as risk rises:
+\begin{equation}\label{eq:alloc}
+w(\text{Low}) = (35, 35, 30);\quad w(\text{Med}) = (20, 20, 60);\quad w(\text{High}) =
+(0, 0, 100)
+\end{equation}
+with weights in percent summing to 100. A High-risk user is placed entirely in the USDC
+stablecoin, a choice motivated by the DeFi-instability literature reviewed in
+Section~\ref{sec:related}.
+
+\subsection{Deterministic Twelve-Month Simulation}\label{subsec:simulation}
+The allocation is evaluated by compounding an initial capital over twelve months using a
+fixed monthly return series for each asset. The portfolio value evolves as
+\begin{equation}\label{eq:portfolio}
+V_t = V_{t-1}\cdot\left(1 + \sum_a w_a\, r_{a,t}\right)
+\end{equation}
+and the return over the horizon is the total growth relative to the initial capital:
+\begin{equation}\label{eq:roi}
+\mathrm{ROI} = (V_{12} - V_0)/V_0
+\end{equation}
+where $V_t$ is the value at month $t$ ($V_0$ the initial capital), $w_a$ the weight of
+asset $a$, and $r_{a,t}$ its fixed monthly return. Because the returns are hardcoded
+constants rather than sampled or historical series, this is a deterministic scenario
+projection, not a market backtest. The originally reported ROI figures were affected by
+an off-by-one normalization (dividing by the first simulated month rather than the
+initial capital); Section~\ref{sec:results} reports the corrected values.
+
+\subsection{Tamper-Evident Audit Logging}\label{subsec:audit-log}
+Every recommendation is recorded in a tamper-evident ledger. The payload is serialized
+into a canonical form with sorted keys and hashed with SHA-256:
+\begin{equation}\label{eq:hash}
+H = \text{SHA-256}(\,\text{serialize}(\text{payload}, \text{sorted})\,)
+\end{equation}
+The digest is stored with a unique transaction identifier; integrity verification
+re-serializes and re-hashes the stored payload and compares it against $H$, so any
+alteration is detectable. The ledger labels entries as a simulated testnet and runs in
+memory---it is not deployed to a live blockchain, a limitation revisited in
+Section~\ref{sec:discussion}.

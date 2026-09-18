@@ -1,0 +1,307 @@
+% =====================  SECTION IV  =====================
+\section{Experimental Setup and Results}\label{sec:results}
+
+This section reports what the system was measured to do. To keep the evidential status of
+each figure explicit, results are labeled as one of four kinds: an experimental result
+(measured on held-out data), a system output (a value the pipeline emits by
+construction), a simulation result (an outcome of the deterministic projection), or a
+theoretical property (a guarantee that follows from the design). Every quantitative claim
+is drawn from the verified metric artifacts.
+
+\subsection{Experimental Setup}\label{subsec:setup}
+All models were trained with scikit-learn 1.5.0 under a fixed random seed for
+reproducibility, using the configuration in Table~\ref{tab:config}. Headline metrics are
+computed on a stratified 20\% holdout of 600 records; stability is estimated with
+stratified five-fold cross-validation in which the clustering is refitted inside each
+fold so that no proxy-label information crosses the split. Uncertainty on the headline
+metrics is quantified by a bootstrap 95\% confidence interval. The proxy-label
+distribution is imbalanced---Low 44.9\%, Medium 45.9\%, High 9.2\%---which is the
+backdrop against which the minority High-risk results should be read.
+
+\subsection{Clustering Quality}\label{subsec:clustering-quality}
+\textbf{\textit{Experimental result.}} The chosen three-cluster solution attains a
+silhouette coefficient of 0.370, a Calinski--Harabasz index of 2158.37, and a
+Davies--Bouldin index of 0.925 on the standardized ratios, with assignments stable under
+resampling at an adjusted Rand index of $0.868 \pm 0.064$. The three clusters map onto
+financially distinct, monotonically ordered groups, which supports their use as risk
+proxies: as Table~\ref{tab:cluster} shows, mean surplus falls and mean expense ratio
+rises steadily from the Low to the High band. Fig.~\ref{fig:cluster} shows the separation
+in principal-component space and in surplus--expense-ratio space with the guardrail
+thresholds overlaid.
+
+\begin{table}[t]
+\centering
+\caption{Mean financial profile of each risk cluster (system output)}
+\label{tab:cluster}
+\begin{tabularx}{\linewidth}{@{}l C C C@{}}
+\toprule
+Risk band & Mean surplus & Mean expense ratio & Mean debt pressure \\
+\midrule
+Low & $+1171.67$ & 76.04\% & 10.43\% \\
+Medium & $-583.14$ & 117.76\% & 14.30\% \\
+High & $-1994.60$ & 195.80\% & 27.54\% \\
+\bottomrule
+\end{tabularx}
+\par\vspace{3pt}
+{\footnotesize\itshape\raggedright The debt-pressure column is informative for profiling
+but is set to zero on the guardrail path at inference; the clusters themselves are formed
+on all three ratios.\par}
+\end{table}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\linewidth]{fig_cluster_sep.png}
+\caption{K-means separation of the three risk segments (silhouette 0.370). Left: the
+first two principal components. Right: the same users in surplus--expense-ratio space with
+guardrail thresholds overlaid.}
+\label{fig:cluster}
+\end{figure}
+
+\subsection{Classification Performance}\label{subsec:classification-perf}
+\textbf{\textit{Experimental result.}} On the 600-record holdout the MLP attains 91.0\%
+accuracy and a 0.881 macro-F1, with a macro one-vs-rest ROC-AUC of 0.986 and a macro
+PR-AUC of 0.951. Five-fold cross-validation gives 91.2\% $\pm$ 0.9\% accuracy and
+$0.867 \pm 0.018$ macro-F1, so the holdout figure is representative rather than a
+favorable split, and a bootstrap 95\% confidence interval places holdout accuracy in
+[0.888, 0.933] and macro-F1 in [0.847, 0.912]. Performance is uneven across bands
+(Table~\ref{tab:perclass}): the model is strong on the well-represented Low and Medium
+bands but markedly weaker on the minority High band, whose F1 of 0.791 reflects its small
+support (62 cases) and its overlap with the Medium band.
+
+\begin{table}[t]
+\centering
+\caption{Per-class classifier performance of the deployed MLP on the holdout
+(experimental result)}
+\label{tab:perclass}
+\begin{tabularx}{\linewidth}{@{}l C C C C@{}}
+\toprule
+Risk band & Precision & Recall & F1 score & Support \\
+\midrule
+Low & 0.922 & 0.971 & 0.946 & 242 \\
+Medium & 0.935 & 0.878 & 0.906 & 296 \\
+High & 0.761 & 0.823 & 0.791 & 62 \\
+\midrule
+Macro average & 0.873 & 0.891 & 0.881 & 600 \\
+Weighted average & 0.912 & 0.910 & 0.910 & 600 \\
+\bottomrule
+\end{tabularx}
+\par\vspace{3pt}
+{\footnotesize\itshape\raggedright Precision, recall, and F1 are computed directly from
+the MLP confusion matrix in Fig.~\ref{fig:cm}(a); the macro average is unweighted across
+classes and the weighted average is weighted by support. Weighted recall equals overall
+accuracy (0.910) by construction.\par}
+\end{table}
+
+Fig.~\ref{fig:cm} shows the confusion matrix of every evaluated model on the identical
+600-case holdout, which exposes the error structure that the aggregate scores hide. Three
+properties hold across all four models. First, errors are overwhelmingly single-band
+confusions between adjacent classes. Second---and this matters for a conservative
+advisory system---not one model ever confuses Low risk with High risk in either
+direction: both off-diagonal corners are exactly zero for the MLP, logistic regression,
+random forest, and decision tree alike, so on the classifier path the system never
+commits the catastrophic inversion of calling a high-risk user low-risk or vice versa.
+Third, the residual errors concentrate in the Medium band and at the Medium--High
+boundary, which is precisely where the deterministic guardrail is positioned to intervene.
+
+The minority High band is where the models differ most, and the comparison does not favor
+the MLP. Reading recall along the High row of Fig.~\ref{fig:cm}, logistic regression
+recovers 61 of 62 true High-risk users (recall 0.984), against 51 of 62 for both the MLP
+and the random forest (0.823) and 54 of 62 for the decision tree (0.871). Logistic
+regression attains this by escalating more readily---it also relabels 36 Medium users as
+High---so its High-band precision falls to 0.629 against the MLP's 0.761, the familiar
+precision--recall trade-off on a small class. For a safety-first system that would rather
+over- than under-state risk, the higher High-risk sensitivity of logistic regression is
+arguably the more desirable operating point, which further weakens any case for preferring
+the neural model on the minority class. The per-class ROC and precision--recall curves for
+the MLP in Fig.~\ref{fig:rocpr} corroborate the aggregate picture: near-perfect
+separability on the well-supported Low band and a visibly lower precision--recall area on
+the 62-case High band.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\linewidth]{fig_confusion_all.png}
+\caption{Confusion matrices of all four evaluated classifiers on the identical 600-case
+holdout (rows: true label; columns: predicted label; each cell shows the count and the
+row percentage). Errors are confined to adjacent bands and no model produces any
+Low$\leftrightarrow$High confusion. All four panels are computed from the same held-out
+predictions and ground-truth proxy labels used for
+Tables~\ref{tab:perclass}--\ref{tab:stats}, and reproduce the accuracy and macro-F1 of
+Table~\ref{tab:modelcompare} exactly.}
+\label{fig:cm}
+\end{figure}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\linewidth]{fig_roc_pr.png}
+\caption{Per-class one-vs-rest ROC curves (left) and precision--recall curves (right) for
+the MLP. The High-risk band shows the lowest average precision.}
+\label{fig:rocpr}
+\end{figure}
+
+\subsection{Comparative Analysis}\label{subsec:comparative-analysis}
+\textbf{\textit{Experimental result.}} The MLP was compared against logistic regression, a
+decision tree, and a random forest under the same protocol
+(Table~\ref{tab:modelcompare}, Fig.~\ref{fig:modelcompare}). The MLP leads on accuracy and
+macro-F1, but the margin over the two strongest baselines is slight, and logistic
+regression in fact marginally exceeds the MLP on both macro ROC-AUC (0.9861 vs.\ 0.9859)
+and macro PR-AUC (0.9520 vs.\ 0.9514)---an inversion to which an accuracy/F1 selection
+rule is blind. Only the decision tree is clearly behind.
+
+\begin{table}[t]
+\centering
+\caption{Model comparison on the holdout set (experimental result)}
+\label{tab:modelcompare}
+\begin{tabularx}{\linewidth}{@{}l C C C C@{}}
+\toprule
+Model & Accuracy & Macro-F1 & ROC-AUC & PR-AUC \\
+\midrule
+MLP (deployed) & 0.910 & 0.881 & 0.9859 & 0.9514 \\
+Logistic regression & 0.892 & 0.864 & 0.9861 & 0.9520 \\
+Random forest & 0.895 & 0.868 & 0.9764 & 0.9233 \\
+Decision tree & 0.795 & 0.765 & 0.9276 & 0.8359 \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.72\linewidth]{fig_model_compare_v2.png}
+\caption{Accuracy, macro-F1, ROC-AUC, and PR-AUC for the four classifiers. The MLP and
+logistic regression are statistically indistinguishable on this dataset (see
+Table~\ref{tab:stats}).}
+\label{fig:modelcompare}
+\end{figure}
+
+\subsection{Statistical Validation}\label{subsec:statistical}
+\textbf{\textit{Experimental result.}} Because every classifier was evaluated on the same
+600-case holdout with an identical class ordering, model differences can be tested on
+paired predictions. For each pairwise comparison the null hypothesis is that the two
+models have equal population error rates---equivalently, that their discordant predictions
+are symmetric---against the two-sided alternative of unequal error rates, at a significance
+level of $\alpha = 0.05$. McNemar's test is the appropriate paired test for this design;
+it is computed with a continuity correction, and for the small discordant counts here an
+exact binomial test yields the same decisions. Table~\ref{tab:stats} reports each
+comparison against the deployed MLP.
+
+The MLP is not statistically distinguishable from logistic regression ($\chi^2 = 2.70$ on
+24/13 discordant pairs, $p = 0.100$) or from the random forest ($\chi^2 = 1.83$ on 22/13
+pairs, $p = 0.176$) at $\alpha = 0.05$; only the decision tree is beaten significantly
+($\chi^2 = 48.67$ on 82/13 pairs, $p < 0.001$). The discordant-pair odds ratios---a
+McNemar effect-size measure---are correspondingly modest for the two close baselines (1.85
+and 1.69) and large only for the decision tree (6.31). Because three comparisons are made
+against the same MLP, a Holm--Bonferroni correction is applied across them; it leaves
+every decision unchanged, since the decision-tree result stays below its adjusted
+threshold while the logistic-regression and random-forest results stay above theirs.
+
+These tests are read alongside the interval estimates. The headline metrics carry a
+bootstrap 95\% confidence interval computed over 300 resamples of the holdout: holdout
+accuracy has a point estimate of 0.910 with a 95\% interval of [0.888, 0.933], and
+macro-F1 a point estimate of 0.881 with a 95\% interval of [0.847, 0.912]. Five-fold
+stratified cross-validation is consistent with these figures (accuracy
+$0.912 \pm 0.009$, macro-F1 $0.867 \pm 0.018$). The overlapping intervals and the
+non-significant tests together mean the evidence does not support a claim that a neural
+model is necessary for this task; the MLP is retained for its probability outputs, which
+the occlusion explainer consumes, and the non-significant comparisons are reported as an
+absence of demonstrated superiority rather than as proof of equivalence.
+
+\begin{table}[t]
+\centering
+\caption{Statistical validation of pairwise model differences (experimental result)}
+\label{tab:stats}
+\footnotesize
+\setlength{\tabcolsep}{3pt}
+\begin{tabularx}{\linewidth}{@{}L c c c c c L@{}}
+\toprule
+Comparison & Test & $\chi^2$ (b/c) & $p$-value & $\alpha$ & Significant? & Interpretation \\
+\midrule
+MLP vs.\ logistic regression & McNemar & 2.70 (24/13) & 0.100 & 0.05 & No & No demonstrated difference \\
+MLP vs.\ random forest & McNemar & 1.83 (22/13) & 0.176 & 0.05 & No & No demonstrated difference \\
+MLP vs.\ decision tree & McNemar & 48.67 (82/13) & $<$ 0.001 & 0.05 & Yes & MLP significantly better \\
+\bottomrule
+\end{tabularx}
+\par\vspace{3pt}
+{\footnotesize\itshape\raggedright $\chi^2$ is McNemar's statistic with continuity
+correction and (b/c) are the discordant-pair counts---cases the MLP classifies correctly
+and the comparator does not (b), versus the reverse (c). All $p$-values are two-sided; the
+`Significant?' decision reflects the Holm--Bonferroni-adjusted threshold, which coincides
+with the uncorrected decision here.\par}
+\end{table}
+
+\subsection{Guardrail Dominance and Reconciliation}\label{subsec:guardrail-dom}
+\textbf{\textit{System output.}} Applied across the dataset, the guardrail alone assigns
+5.87\% of users to Low, 33.53\% to Medium, and 60.60\% to High risk. The guardrail signal
+is greater than or equal to the cluster signal for 100\% of users and strictly greater for
+84.13\%, so the guardrail---not the classifier---is the binding signal in the
+reconciliation for most users. Read the other way (Fig.~\ref{fig:guardrail}), when the
+model predicts Low its prediction never changes the final band (0.00\% of cases), when it
+predicts Medium the final band changes for 5.87\% of cases, and when it predicts High it
+changes for 39.40\%. Substituting a constant Low-risk predictor would alter 0.00\% of
+final decisions.
+
+This is the single most consequential finding, and it qualifies a naive reading of the
+91\% accuracy. Because the conservative guardrail escalates so many users to High risk on
+cash-flow grounds alone, the learned classifier determines the end recommendation for only
+a minority of users. The accuracy is a genuine property of the classifier, but it is not a
+measure of the system's end-to-end decision quality, which is dominated by the
+deterministic layer.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.9\linewidth]{fig_guardrail_dominance.png}
+\caption{Guardrail dominance. (a) Risk share under clustering alone versus the guardrail
+alone; the guardrail escalates 60.6\% of users to High risk. (b) Share of cases in which
+the model prediction can still change the final band, by predicted class.}
+\label{fig:guardrail}
+\end{figure}
+
+\subsection{Portfolio Simulation}\label{subsec:portfolio-sim}
+\textbf{\textit{Simulation result.}} Under the deterministic twelve-month projection with
+fixed monthly returns, the corrected return on investment is 25.72\% for the Low-risk
+allocation, 15.40\% for Medium, and 2.43\% for High, against a USDC-only baseline of
+2.43\% (Table~\ref{tab:roi}, Fig.~\ref{fig:roi}). Maximum drawdowns are $-3.79\%$,
+$-2.08\%$, and 0.00\% respectively. The High allocation and the baseline coincide exactly
+because a High-risk user is placed entirely in USDC.
+
+\begin{table}[t]
+\centering
+\caption{Original versus corrected twelve-month ROI by risk band}
+\label{tab:roi}
+\begin{tabularx}{\linewidth}{@{}l C C C C@{}}
+\toprule
+Risk band & BTC/ETH/USDC & Original ROI & Corrected ROI & Max drawdown \\
+\midrule
+Low & 35 / 35 / 30 & 20.18\% & 25.72\% & $-3.79\%$ \\
+Medium & 20 / 20 / 60 & 12.34\% & 15.40\% & $-2.08\%$ \\
+High & 0 / 0 / 100 & 2.22\% & 2.43\% & 0.00\% \\
+\midrule
+Baseline (USDC) & 0 / 0 / 100 & --- & 2.43\% & 0.00\% \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.72\linewidth]{fig_portfolio_roi.png}
+\caption{Deterministic twelve-month simulated ROI by risk band: originally reported values
+(inflated by the backtester indexing error) versus corrected values, against the USDC-only
+baseline. The returns are fixed synthetic constants, so the figure demonstrates allocation
+mechanics rather than market performance.}
+\label{fig:roi}
+\end{figure}
+
+Two cautions attach. First, these are the corrected values: the originally reported ROIs
+were inflated by an off-by-one normalization in the backtester. Second, and more
+fundamentally, the returns are generated from fixed, hardcoded monthly constants rather
+than live or historical market data, so they demonstrate the mechanics of the allocation
+policy---higher assessed risk yields a more conservative, lower-variance allocation---but
+are not evidence of real-world investment performance. They are best read as an internal
+consistency check on the allocation logic.
+
+\subsection{Auditability}\label{subsec:audit}
+\textbf{\textit{Theoretical property.}} Every recommendation is hashed with SHA-256 over a
+canonicalized payload and stored with a unique transaction identifier, and a verification
+routine re-hashes a stored record to detect alteration. Tamper-evidence here is a property
+of the cryptographic construction rather than a measured outcome: any change to a logged
+payload changes its digest and is detectable on verification. The mechanism is exercised
+against an in-memory simulated ledger, not a deployed blockchain, so it demonstrates the
+auditability pattern rather than production-grade distributed immutability.
